@@ -288,3 +288,69 @@ Total time: 18.70 seconds
 Original file: /Users/username/Downloads/Lojong2TrainingTheMind-JetsunKhandroRinpoche2/2.m4a
 Processed file: /Users/username/Downloads/Lojong2TrainingTheMind-JetsunKhandroRinpoche2/2_denoised.m4a
 ```
+
+## Standalone Denoise Applications
+
+The project includes dedicated standalone applications for audio noise reduction that can be used independently of the YouTube downloader functionality.
+
+### standalone_denoise_app Directory
+
+Located in the `standalone_denoise_app/` folder, these applications provide user-friendly interfaces for processing existing audio files without any YouTube-related features.
+
+### Included Applications
+
+1. **Single-file Denoise App** (`denoise_app.py`) - For processing individual audio files
+2. **Batch Denoise App** (`denoise_batch_app.py`) - For processing multiple audio files at once
+
+### Key Features
+
+- Intuitive graphical user interfaces
+- Adjustable noise reduction parameters
+- Progress tracking during processing
+- Detailed logging of operations
+- Support for various audio formats (M4A, MP3, WAV, FLAC, OGG, AAC)
+- Batch processing capabilities
+- File list management (add, remove, clear)
+- Output directory customization
+
+### Installation
+
+1. Navigate to the standalone denoise app directory:
+   ```bash
+   cd standalone_denoise_app
+   ```
+
+2. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Make sure ffmpeg is installed (required for format support)
+
+### Usage
+
+The standalone denoise applications can be started in several ways:
+
+#### Using the Launcher Script
+```bash
+./launch_denoise_apps.sh
+```
+This will display a menu allowing you to choose between the single-file and batch applications, or install dependencies.
+
+#### Running Directly
+```bash
+python3 denoise_app.py       # For single-file processing
+python3 denoise_batch_app.py # For batch processing
+```
+
+For detailed usage instructions, please refer to the `README.md` file inside the `standalone_denoise_app` directory.
+
+### Ideal Use Cases
+
+These standalone applications are perfect for:
+- Processing collections of existing audio files
+- Denoising voice recordings, podcasts, or music files
+- Batch processing large numbers of files
+- Users who only need noise reduction functionality without YouTube downloading
+
+For more information about the standalone denoise applications, including detailed usage instructions and troubleshooting tips, please refer to the documentation in the `standalone_denoise_app` directory.

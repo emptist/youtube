@@ -196,7 +196,7 @@ class AudioDenoiseApp:
             # Call the noise reduction function
             result_file = reduce_noise(
                 input_file,
-                noise_duration=self.noise_duration.get(),
+                noise_sample_duration=self.noise_duration.get(),
                 chunk_duration=self.chunk_duration.get(),
                 output_file=output_file
             )
