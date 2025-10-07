@@ -1,11 +1,7 @@
-import os
 import sys
-import numpy as np
-import librosa
-import noisereduce as nr
+import os
 from pathlib import Path
 import argparse
-from tqdm import tqdm
 import subprocess
 import time
 import signal
@@ -28,18 +24,26 @@ except ImportError:
 def timeout_handler(signum, frame):
     raise TimeoutException("Operation timed out")
 
-# Check if ffmpeg is installed
-try:
-    # Try to find ffmpeg in PATH
-    if os.system('which ffmpeg > /dev/null 2>&1') != 0:
-        print("ERROR: ffmpeg is required but not detected!")
-        print("Please install ffmpeg and try again.")
-        print("Installation command example (Homebrew): brew install ffmpeg")
-        sys.exit(1)
-    print("ffmpeg installation detected")
-except Exception:
-    print("ERROR: ffmpeg is required but error occurred during detection!")
-    sys.exit(1)
+# Lazy import function for heavy libraries
+def _import_heavy_libraries():
+    """Lazily import heavy libraries when needed"""
+    import numpy as np
+    import librosa
+    import noisereduce as nr
+    import soundfile as sf
+    from tqdm import tqdm
+    return np, librosa, nr, sf, tqdm
+
+# Function to check ffmpeg installation
+def _check_ffmpeg():
+    """Check if ffmpeg is installed"""
+    try:
+        # Try to find ffmpeg in PATH
+        if os.system('which ffmpeg > /dev/null 2>&1') != 0:
+            return False, "ffmpeg is required but not detected!"
+        return True, "ffmpeg installation detected"
+    except Exception as e:
+        return False, f"Error checking ffmpeg: {str(e)}"
 
 
 def reduce_noise(
@@ -57,6 +61,14 @@ def reduce_noise(
         chunk_duration: Duration for chunk processing (seconds), useful for large files
     """
     try:
+        # Check if ffmpeg is installed
+        ffmpeg_installed, ffmpeg_msg = _check_ffmpeg()
+        if not ffmpeg_installed:
+            raise RuntimeError(ffmpeg_msg)
+        
+        # Import heavy libraries only when needed
+        np, librosa, nr_lib, sf, tqdm = _import_heavy_libraries()
+        
         # Save original file path before any potential conversion
         original_input_file = input_file
         
@@ -164,14 +176,14 @@ def reduce_noise(
                     chunk = audio_data[start_idx:end_idx]
                     
                     # Apply noise reduction to each chunk
-                    reduced_chunk = nr.reduce_noise(y=chunk, y_noise=noise_sample, sr=sr)
+                    reduced_chunk = nr_lib.reduce_noise(y=chunk, y_noise=noise_sample, sr=sr)
                     reduced_noise[start_idx:end_idx] = reduced_chunk
                     
                     pbar.update(1)
         else:
             # Process all at once
             with tqdm(total=1, desc="Processing progress") as pbar:
-                reduced_noise = nr.reduce_noise(y=audio_data, y_noise=noise_sample, sr=sr)
+                reduced_noise = nr_lib.reduce_noise(y=audio_data, y_noise=noise_sample, sr=sr)
                 pbar.update(1)
         
         process_time = time.time() - start_time
@@ -196,7 +208,6 @@ def reduce_noise(
             temp_output_wav = output_file.replace('.m4a', '_temp.wav')
             
             # Save processed audio as WAV
-            import soundfile as sf
             sf.write(temp_output_wav, reduced_noise, sr)
             
             # Then convert to M4A using ffmpeg
@@ -224,7 +235,6 @@ def reduce_noise(
                 raise
         else:
             # For other formats, use soundfile directly
-            import soundfile as sf
             sf.write(output_file, reduced_noise, sr)
         
         save_time = time.time() - start_time
@@ -248,33 +258,30 @@ def main():
     parser = argparse.ArgumentParser(description='Audio Noise Reduction Tool')
     parser.add_argument('input_file', help='Input audio file path')
     parser.add_argument('-o', '--output', help='Output audio file path', default=None)
-    parser.add_argument('-d', '--duration', type=float, default=2.0, 
+    parser.add_argument('-n', '--noise-duration', type=float, default=2.0, 
                         help='Duration for noise sampling (seconds), default first 2 seconds')
-    parser.add_argument('-c', '--chunk', type=float, default=30, 
-                        help='Duration for chunk processing (seconds), useful for large files, default 30 seconds')
+    parser.add_argument('-c', '--chunk-duration', type=float, default=30.0, 
+                        help='Duration for chunk processing (seconds), useful for large files')
     
     # Parse command line arguments
     args = parser.parse_args()
     
-    # Expand user directory symbol
-    input_file = os.path.expanduser(args.input_file)
-    output_file = os.path.expanduser(args.output) if args.output else None
-    
-    # Check if input file exists
-    if not os.path.exists(input_file):
-        print(f"Error: Input file '{input_file}' does not exist")
-        return
-    
-    # Execute noise reduction
-    reduce_noise(input_file, output_file, args.duration, args.chunk)
+    try:
+        # Call the noise reduction function
+        output_file = reduce_noise(
+            args.input_file,
+            output_file=args.output,
+            noise_sample_duration=args.noise_duration,
+            chunk_duration=args.chunk_duration
+        )
+        
+        print(f"Noise reduction completed successfully!")
+        print(f"Output file: {output_file}")
+        sys.exit(0)
+    except Exception as e:
+        print(f"Noise reduction failed: {str(e)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    # If running the script directly, execute the main function
     main()
-    
-    # You can also add test code here, for example:
-# if __name__ == "__main__":
-#     # Process a specific file directly
-#     input_path = os.path.expanduser('~/Downloads/Lojong2TrainingTheMind-JetsunKhandroRinpoche2/2.m4a')
-#     reduce_noise(input_path)

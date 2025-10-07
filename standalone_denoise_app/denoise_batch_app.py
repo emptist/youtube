@@ -7,14 +7,20 @@ import threading
 import time
 import shutil
 
-# Import the noise reduction function
-from de_noise import reduce_noise
+# Lazy import for reduce_noise
+reduce_noise = None
+
+def _import_reduce_noise():
+    global reduce_noise
+    if reduce_noise is None:
+        from de_noise import reduce_noise
+    return reduce_noise
 
 class BatchAudioDenoiseApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Batch Audio Noise Reduction Tool")
-        self.root.geometry("750x700")
+        self.root.geometry("850x700")
         self.root.resizable(True, True)
         
         # Track if denoising is in progress
@@ -75,8 +81,8 @@ class BatchAudioDenoiseApp:
         self.output_dir_entry = ttk.Entry(output_dir_frame, textvariable=self.output_dir, width=50)
         self.output_dir_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         
-        browse_dir_button = ttk.Button(output_dir_frame, text="Browse", command=self.browse_output_directory)
-        browse_dir_button.pack(side=tk.LEFT)
+        browse_dir_button = ttk.Button(output_dir_frame, text="Browse Directory", command=self.browse_output_directory)
+        browse_dir_button.pack(side=tk.LEFT, padx=(0, 5))
         
         # Settings section
         settings_frame = ttk.LabelFrame(main_frame, text="Noise Reduction Settings", padding="10")
@@ -256,8 +262,9 @@ class BatchAudioDenoiseApp:
                     
                     start_time = time.time()
                     
-                    # Call the noise reduction function
-                    result_file = reduce_noise(
+                    # Import and call the noise reduction function
+                    reduce_noise_func = _import_reduce_noise()
+                    result_file = reduce_noise_func(
                         input_file,
                         noise_sample_duration=self.noise_duration.get(),
                         chunk_duration=self.chunk_duration.get(),

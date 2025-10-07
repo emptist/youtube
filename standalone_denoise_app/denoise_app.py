@@ -7,14 +7,20 @@ import threading
 import time
 import shutil
 
-# Import the noise reduction function
-from de_noise import reduce_noise
+# Lazy import for reduce_noise
+reduce_noise = None
+
+def _import_reduce_noise():
+    global reduce_noise
+    if reduce_noise is None:
+        from de_noise import reduce_noise
+    return reduce_noise
 
 class AudioDenoiseApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Audio Noise Reduction Tool")
-        self.root.geometry("700x600")
+        self.root.geometry("800x600")
         self.root.resizable(True, True)
         
         # Track if denoising is in progress
@@ -44,21 +50,21 @@ class AudioDenoiseApp:
         input_frame = ttk.LabelFrame(main_frame, text="Input Audio File", padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
-        self.input_entry = ttk.Entry(input_frame, textvariable=self.input_file_path, width=70)
+        self.input_entry = ttk.Entry(input_frame, textvariable=self.input_file_path, width=50)
         self.input_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
-        browse_input_button = ttk.Button(input_frame, text="Browse", command=self.browse_input_file)
-        browse_input_button.pack(side=tk.LEFT)
+        browse_input_button = ttk.Button(input_frame, text="Browse Files", command=self.browse_input_file)
+        browse_input_button.pack(side=tk.LEFT, padx=(0, 5))
         
         # Output file section
         output_frame = ttk.LabelFrame(main_frame, text="Output File", padding="10")
         output_frame.pack(fill=tk.X, pady=(0, 10))
         
-        self.output_entry = ttk.Entry(output_frame, textvariable=self.output_file_path, width=70)
+        self.output_entry = ttk.Entry(output_frame, textvariable=self.output_file_path, width=50)
         self.output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
-        browse_output_button = ttk.Button(output_frame, text="Browse", command=self.browse_output_file)
-        browse_output_button.pack(side=tk.LEFT)
+        browse_output_button = ttk.Button(output_frame, text="Browse Files", command=self.browse_output_file)
+        browse_output_button.pack(side=tk.LEFT, padx=(0, 5))
         
         # Settings section
         settings_frame = ttk.LabelFrame(main_frame, text="Noise Reduction Settings", padding="10")
@@ -193,8 +199,9 @@ class AudioDenoiseApp:
             
             start_time = time.time()
             
-            # Call the noise reduction function
-            result_file = reduce_noise(
+            # Import and call the noise reduction function
+            reduce_noise_func = _import_reduce_noise()
+            result_file = reduce_noise_func(
                 input_file,
                 noise_sample_duration=self.noise_duration.get(),
                 chunk_duration=self.chunk_duration.get(),

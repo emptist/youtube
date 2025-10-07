@@ -6,14 +6,23 @@ import time
 import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog, messagebox
 import threading
-import yt_dlp
 import subprocess
 import re
 import urllib.request
 import shutil
 
-# Import noise reduction function
-from de_noise import reduce_noise
+# Lazy imports for heavy libraries
+yt_dlp = None
+reduce_noise = None
+
+def _import_heavy_libraries():
+    """Lazily import heavy libraries when needed"""
+    global yt_dlp, reduce_noise
+    if yt_dlp is None:
+        import yt_dlp
+    if reduce_noise is None:
+        from de_noise import reduce_noise
+    return yt_dlp, reduce_noise
 
 class SimpleYouTubeDownloader:
     def __init__(self, root):
@@ -394,7 +403,9 @@ class SimpleYouTubeDownloader:
                 # No postprocessors needed for M4A format
                 ydl_opts['postprocessors'] = []
             
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Import heavy libraries when needed
+            yt_dlp_lib, reduce_noise_func = _import_heavy_libraries()
+            with yt_dlp_lib.YoutubeDL(ydl_opts) as ydl:
                 # Check if download was cancelled before starting
                 if not self.download_in_progress:
                     return
@@ -428,7 +439,7 @@ class SimpleYouTubeDownloader:
                     
                     try:
                         # Apply noise reduction
-                        denoised_file = reduce_noise(filename)
+                        denoised_file = reduce_noise_func(filename)
                         self.log_message(f"Noise reduction completed: {os.path.basename(denoised_file)}")
                         
                         # If we're not keeping the original, rename the denoised file to the original name
@@ -493,7 +504,9 @@ class SimpleYouTubeDownloader:
             if proxy:
                 ydl_opts['proxy'] = proxy
             
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Import heavy libraries when needed
+            yt_dlp_lib, _ = _import_heavy_libraries()
+            with yt_dlp_lib.YoutubeDL(ydl_opts) as ydl:
                 # Check if download was cancelled before starting
                 if not self.download_in_progress:
                     return
