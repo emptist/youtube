@@ -1,6 +1,20 @@
 import yt_dlp
 import ssl
 import os
+import sys
+
+# Check if ffmpeg is installed
+try:
+    # Try to find ffmpeg in PATH
+    if os.system('which ffmpeg > /dev/null 2>&1') != 0:
+        print("ERROR: ffmpeg is required but not detected!")
+        print("Please install ffmpeg and try again.")
+        print("Installation command example (Homebrew): brew install ffmpeg")
+        sys.exit(1)
+    print("ffmpeg installation detected")
+except Exception:
+    print("ERROR: ffmpeg is required but error occurred during detection!")
+    sys.exit(1)
 
 # Configure SSL context to handle potential certificate issues
 ssl_context = ssl.create_default_context()
@@ -28,11 +42,11 @@ ydl_opts = {
     'retries': 10,
     # Set timeout duration
     'socket_timeout': 30,
-    # Download merged video format, no ffmpeg required for merging
+    # Download best available format
     'format': 'best[ext=mp4]/best',
-    # Disable automatic merging feature
-    'merge_output_format': None,
-    # Do not use post-processors
+    # Enable automatic merging when needed
+    'merge_output_format': 'mp4',
+    # No post-processors needed for basic video download
     'postprocessors': [],
     # Set download directory
     'outtmpl': os.path.join(download_dir, '%(title)s [%(id)s].%(ext)s')

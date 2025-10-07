@@ -6,14 +6,22 @@ import tempfile
 import shutil
 import sys
 
-# Try to import pydub but handle if it's not available
+# Check if ffmpeg is installed
 try:
-    from pydub import AudioSegment
-    pydub_available = True
-    print("pydub library loaded successfully.")
-except ImportError:
-    pydub_available = False
-    print("pydub library not available. Will test alternative compression methods.")
+    # Try to find ffmpeg in PATH
+    if os.system('which ffmpeg > /dev/null 2>&1') != 0:
+        print("ERROR: ffmpeg is required but not detected!")
+        print("Please install ffmpeg and try again.")
+        print("Installation command example (Homebrew): brew install ffmpeg")
+        sys.exit(1)
+    print("ffmpeg installation detected")
+except Exception:
+    print("ERROR: ffmpeg is required but error occurred during detection!")
+    sys.exit(1)
+
+# Import required libraries
+from pydub import AudioSegment
+print("pydub library loaded successfully.")
 
 # Create a temporary directory for testing
 temp_dir = tempfile.mkdtemp()
@@ -57,79 +65,32 @@ try:
     wav_compression_ratio = (original_size - compressed_wav_size) / original_size * 100
     print(f"Compressed 16-bit WAV: {compressed_wav_size:.2f} MB (Reduction: {wav_compression_ratio:.1f}%)")
     
-    # Test 2: Old method - simple file copy
-    print("\n=== Testing Old Method (File Copy) ===")
-    mp3_old_method = os.path.join(temp_dir, "mp3_old_method.mp3")
-    if os.path.exists(mp3_old_method):
-        os.remove(mp3_old_method)
-    shutil.copy(compressed_wav_file, mp3_old_method)
-    mp3_old_size = os.path.getsize(mp3_old_method) / (1024 * 1024)  # Convert to MB
-    old_mp3_compression_ratio = (original_size - mp3_old_size) / original_size * 100
-    print(f"Old MP3 workaround (copy): {mp3_old_size:.2f} MB (Reduction: {old_mp3_compression_ratio:.1f}%)")
-    
-    # Test 3: Alternative compression - convert to mono and 16-bit (new fallback method)
-    print("\n=== Testing Alternative Compression (Mono + 16-bit) ===")
-    # Ensure it's mono
-    if len(audio_with_noise.shape) > 1:
-        mono_audio = np.mean(audio_with_noise, axis=1)
-    else:
-        mono_audio = audio_with_noise.copy()
-    
-    # Normalize and convert to 16-bit
-    normalized_mono = mono_audio / (np.max(np.abs(mono_audio)) + 1e-8)
-    mono_16bit = (normalized_mono * 32767).astype(np.int16)
-    
-    # Save as WAV then rename to MP3
-    alt_temp_file = os.path.join(temp_dir, "alt_temp.wav")
-    sf.write(alt_temp_file, mono_16bit, sample_rate, subtype='PCM_16')
-    
-    alt_mp3_file = os.path.join(temp_dir, "alternative_compression.mp3")
-    if os.path.exists(alt_mp3_file):
-        os.remove(alt_mp3_file)
-    shutil.copy(alt_temp_file, alt_mp3_file)
-    os.remove(alt_temp_file)
-    
-    alt_mp3_size = os.path.getsize(alt_mp3_file) / (1024 * 1024)  # Convert to MB
-    alt_compression_ratio = (original_size - alt_mp3_size) / original_size * 100
-    print(f"Alternative compression (mono + 16-bit): {alt_mp3_size:.2f} MB (Reduction: {alt_compression_ratio:.1f}%)")
-    
-    # Test 4: Try pydub compression if available
-    mp3_new_size = None
-    new_mp3_compression_ratio = None
-    
-    if pydub_available:
-        print("\n=== Testing Pydub Compression (if ffmpeg is available) ===")
-        try:
-            # Convert numpy array to AudioSegment
-            audio_segment = AudioSegment(
-                audio_16bit.tobytes(),
-                frame_rate=sample_rate,
-                sample_width=2,  # 16-bit
-                channels=1  # Mono
-            )
-            
-            # Export as MP3 with compression
-            mp3_new_method = os.path.join(temp_dir, "mp3_new_method.mp3")
-            audio_segment.export(mp3_new_method, format="mp3", bitrate="128k")
-            mp3_new_size = os.path.getsize(mp3_new_method) / (1024 * 1024)  # Convert to MB
-            new_mp3_compression_ratio = (original_size - mp3_new_size) / original_size * 100
-            print(f"Pydub MP3 compression: {mp3_new_size:.2f} MB (Reduction: {new_mp3_compression_ratio:.1f}%)")
-            print("Successfully used pydub for MP3 compression.")
-        except FileNotFoundError:
-            print("ffmpeg not found. Pydub compression requires ffmpeg.")
-            print("For better compression, please install ffmpeg.")
-            print("Installation command example (Homebrew): brew install ffmpeg")
-        except Exception as e:
-            print(f"Pydub compression failed: {str(e)}")
+    # Test 2: Pydub compression with ffmpeg
+    print("\n=== Testing Pydub Compression ===")
+    try:
+        # Convert numpy array to AudioSegment
+        audio_segment = AudioSegment(
+            audio_16bit.tobytes(),
+            frame_rate=sample_rate,
+            sample_width=2,  # 16-bit
+            channels=1  # Mono
+        )
+        
+        # Export as MP3 with compression
+        mp3_new_method = os.path.join(temp_dir, "mp3_new_method.mp3")
+        audio_segment.export(mp3_new_method, format="mp3", bitrate="128k")
+        mp3_new_size = os.path.getsize(mp3_new_method) / (1024 * 1024)  # Convert to MB
+        new_mp3_compression_ratio = (original_size - mp3_new_size) / original_size * 100
+        print(f"Pydub MP3 compression: {mp3_new_size:.2f} MB (Reduction: {new_mp3_compression_ratio:.1f}%)")
+        print("Successfully used pydub for MP3 compression.")
+    except Exception as e:
+        print(f"Pydub compression failed: {str(e)}")
     
     # Summary of compression methods
     print("\n=== Compression Method Summary ===")
     print(f"Original 32-bit float WAV:      {original_size:.2f} MB")
     print(f"16-bit Conversion:             {compressed_wav_size:.2f} MB (Reduction: {wav_compression_ratio:.1f}%)")
-    print(f"Old Method (File Copy):         {mp3_old_size:.2f} MB (Reduction: {old_mp3_compression_ratio:.1f}%)")
-    print(f"Alternative (Mono + 16-bit):    {alt_mp3_size:.2f} MB (Reduction: {alt_compression_ratio:.1f}%)")
-    if mp3_new_size is not None:
-        print(f"Pydub MP3 (with ffmpeg):       {mp3_new_size:.2f} MB (Reduction: {new_mp3_compression_ratio:.1f}%)")
+    print(f"Pydub MP3:                     {mp3_new_size:.2f} MB (Reduction: {new_mp3_compression_ratio:.1f}%)")
     
     # Now test with the download_process_audio.py module if available
     try:

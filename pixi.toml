@@ -3,6 +3,12 @@ name = "youtube-media-downloader"
 version = "0.1.0"
 description = "Download audio and video from YouTube"
 
+[system-dependencies]
+# ffmpeg is required for all functionality
+# Installation instructions:
+# - macOS: brew install ffmpeg
+# - Windows: Download from https://ffmpeg.org/download.html and add to PATH
+
 [dependencies]
 yt-dlp = ">=2024.0"
 noisereduce = ">=2.0"

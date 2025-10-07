@@ -200,10 +200,10 @@ def main():
         print("  3. Apply noise reduction to the audio")
         print("  4. Save the denoised version")
         print("")
-        print("Notes:")
+        print("\nNotes:")
         print("  - All files are saved to your Downloads folder")
-        print("  - For M4A files, if ffmpeg is not installed, they will be converted to MP3")
         print("  - Large files (>100MB) are processed in chunks for better performance")
+        print("  - ffmpeg is required for audio processing")
         return
     
     # Check if URLs are provided as arguments
@@ -221,16 +221,17 @@ def main():
     print(f"Files will be saved to: {download_dir}")
     
     # Check if ffmpeg is installed
-    has_ffmpeg = False
     try:
         # Try to find ffmpeg in PATH
-        if os.system('which ffmpeg > /dev/null 2>&1') == 0:
-            has_ffmpeg = True
-            print("ffmpeg installation detected")
-        else:
-            print("ffmpeg installation not detected")
+        if os.system('which ffmpeg > /dev/null 2>&1') != 0:
+            print("ERROR: ffmpeg is required but not detected!")
+            print("Please install ffmpeg and try again.")
+            print("Installation command example (Homebrew): brew install ffmpeg")
+            sys.exit(1)
+        print("ffmpeg installation detected")
     except Exception:
-        print("Error checking ffmpeg installation status")
+        print("ERROR: ffmpeg is required but error occurred during detection!")
+        sys.exit(1)
     
     # Build output template path
     ydl_opts = {
@@ -244,7 +245,7 @@ def main():
         'socket_timeout': 30,
         # Download audio format
         'format': 'bestaudio[ext=m4a]/bestaudio/best',
-        # Don't use postprocessor to avoid ffmpeg dependency
+        # Use ffmpeg for audio extraction
         'postprocessors': [],
         # Set download directory
         'outtmpl': os.path.join(download_dir, '%(title)s [%(id)s].%(ext)s')
@@ -292,10 +293,6 @@ def main():
                     print(f"Failed to process {audio_file}: {str(e)}")
             
             print("\n=== All files processed ===")
-            if not has_ffmpeg:
-                print("Note: ffmpeg is not installed, so M4A files were converted to MP3 format.")
-                print("It is recommended to install ffmpeg for better audio quality and compatibility.")
-                print("Installation command example (Homebrew): brew install ffmpeg")
         except Exception as e:
             print(f"Exception occurred: {str(e)}")
 

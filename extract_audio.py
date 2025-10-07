@@ -13,16 +13,17 @@ URLS = [
 ]
 
 # Check if ffmpeg is installed
-has_ffmpeg = False
 try:
     # Try to find ffmpeg in PATH
-    if os.system('which ffmpeg > /dev/null 2>&1') == 0:
-        has_ffmpeg = True
-        print("ffmpeg installation detected")
-    else:
-        print("ffmpeg installation not detected")
+    if os.system('which ffmpeg > /dev/null 2>&1') != 0:
+        print("ERROR: ffmpeg is required but not detected!")
+        print("Please install ffmpeg and try again.")
+        print("Installation command example (Homebrew): brew install ffmpeg")
+        sys.exit(1)
+    print("ffmpeg installation detected")
 except Exception:
-    print("Error checking ffmpeg installation status")
+    print("ERROR: ffmpeg is required but error occurred during detection!")
+    sys.exit(1)
 
 # Set download directory to user's Downloads folder
 download_dir = os.path.expanduser('~/Downloads')
@@ -42,8 +43,6 @@ ydl_opts = {
     'socket_timeout': 30,
     # Download audio format
     'format': 'bestaudio[ext=m4a]/bestaudio/best',
-    # Don't use postprocessor to avoid ffmpeg dependency
-    'postprocessors': [],
     # Set download directory
     'outtmpl': os.path.join(download_dir, '%(title)s [%(id)s].%(ext)s')
 }
@@ -55,10 +54,6 @@ with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         error_code = ydl.download(URLS)
         if error_code == 0:
             print("Audio download completed successfully!")
-            if not has_ffmpeg:
-                print("Note: ffmpeg is not installed, so no audio post-processing was performed.")
-                print("It is recommended to install ffmpeg for better audio quality and compatibility.")
-                print("Installation command example (Homebrew): brew install ffmpeg")
         else:
             print(f"Error occurred during audio download, error code: {error_code}")
     except Exception as e:

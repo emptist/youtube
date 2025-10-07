@@ -8,3 +8,8 @@ soundfile>=0.12.0
 
 # For audio compression and format conversion
 pydub>=0.25.1
+
+# System dependencies (not installable via pip)
+# ffmpeg is required - installation instructions:
+# - macOS: brew install ffmpeg
+# - Windows: Download from https://ffmpeg.org/download.html and add to PATH

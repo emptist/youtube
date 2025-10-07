@@ -200,16 +200,11 @@ class SimpleYouTubeDownloader:
                 self.proxy_entry.config(state=tk.DISABLED)
                 
     def toggle_format_options(self):
-        """Toggle format options based on download type selection and ffmpeg availability"""
+        """Toggle format options based on download type selection"""
         if self.download_type.get() == "audio":
             self.m4a_radio.config(state=tk.NORMAL)
-            # Show MP3 option only if ffmpeg is available
-            if self.has_ffmpeg:
-                self.mp3_radio.pack(side=tk.LEFT, padx=10)  # Make MP3 option visible
-                self.mp3_radio.config(state=tk.NORMAL)
-            else:
-                self.mp3_radio.pack_forget()  # Hide MP3 option
-                self.format_var.set("m4a")  # Ensure M4A is selected
+            self.mp3_radio.pack(side=tk.LEFT, padx=10)  # Make MP3 option visible
+            self.mp3_radio.config(state=tk.NORMAL)
             self.format_frame.config(text="Audio Format Options")
         else:
             # For video downloads, hide audio format options
@@ -236,16 +231,34 @@ class SimpleYouTubeDownloader:
     
     def check_ffmpeg_installation(self):
         try:
-            # Try to find ffmpeg in PATH
-            if subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode == 0:
+            # First try to execute ffmpeg directly (works if in PATH)
+            result = subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
                 self.has_ffmpeg = True
-                self.log_message("ffmpeg installation detected. Better audio processing available.")
-            else:
-                self.has_ffmpeg = False
-                self.log_message("Note: ffmpeg not detected. Some advanced features may be limited.")
-        except Exception:
+                self.log_message("ffmpeg installation detected. Audio conversion available.")
+                return
+            
+            # If that fails, check common macOS ffmpeg installation paths
+            common_paths = [
+                '/usr/local/bin/ffmpeg',
+                '/opt/homebrew/bin/ffmpeg',
+                '/usr/bin/ffmpeg',
+                '/bin/ffmpeg'
+            ]
+            
+            for path in common_paths:
+                if os.path.isfile(path) and os.access(path, os.X_OK):
+                    # Found ffmpeg at a known path
+                    self.has_ffmpeg = True
+                    self.log_message(f"ffmpeg installation detected at {path}. Audio conversion available.")
+                    return
+            
+            # If we get here, ffmpeg wasn't found
             self.has_ffmpeg = False
-            self.log_message("Error checking ffmpeg installation status")
+            self.log_message("ERROR: ffmpeg is required but not detected. Please install ffmpeg.")
+        except Exception as e:
+            self.has_ffmpeg = False
+            self.log_message(f"ERROR: ffmpeg is required but error occurred: {str(e)}")
     
     def log_message(self, message):
         self.status_text.config(state=tk.NORMAL)
@@ -336,15 +349,15 @@ class SimpleYouTubeDownloader:
             if proxy:
                 ydl_opts['proxy'] = proxy
             
-            # If we want MP3 and have ffmpeg, use postprocessor to convert
-            if format == "mp3" and self.has_ffmpeg:
+            # If we want MP3, use postprocessor to convert
+            if format == "mp3":
                 ydl_opts['postprocessors'] = [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }]
             else:
-                # No postprocessors to avoid ffmpeg dependency when we don't need it
+                # No postprocessors needed for M4A format
                 ydl_opts['postprocessors'] = []
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -367,9 +380,7 @@ class SimpleYouTubeDownloader:
                 # Get the actual filename
                 filename = ydl.prepare_filename(info)
                 
-                # If we're using MP3 format without ffmpeg, just keep original extension
-                if format == "mp3" and not self.has_ffmpeg:
-                    self.log_message(f"Warning: ffmpeg not available. Saved as original format: {os.path.basename(filename)}")
+
                 
                 self.log_message(f"Download completed: {os.path.basename(filename)}")
                 self.log_message(f"File saved to: {self.download_dir}")

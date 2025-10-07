@@ -5,6 +5,21 @@ import numpy as np
 import librosa
 import soundfile as sf
 import argparse
+import subprocess
+
+# Check if ffmpeg is installed
+try:
+    # Try to find ffmpeg in PATH
+    subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    print("ffmpeg installation detected")
+except subprocess.CalledProcessError:
+    print("ERROR: ffmpeg is required but not detected!")
+    print("Please install ffmpeg and try again.")
+    print("Installation command example (Homebrew): brew install ffmpeg")
+    sys.exit(1)
+except Exception:
+    print("ERROR: ffmpeg is required but error occurred during detection!")
+    sys.exit(1)
 
 """
 Helper script to test M4A audio saving functionality.
@@ -39,25 +54,30 @@ def save_sample_audio(input_file, output_file, sample_duration=10):
             audio_data = audio_data / np.max(np.abs(audio_data))
             print("Normalized audio data to range [-1, 1]")
         
-        # Check if file extension is M4A
+        # Use appropriate method based on file format
         if output_file.lower().endswith('.m4a'):
-            # For M4A format, we need to use a workaround since ffmpeg is missing
-            # We'll save as WAV first, then convert extension to MP3 for compatibility
-            mp3_output = output_file.replace('.m4a', '.mp3')
-            print(f"Saving as MP3 instead of M4A (ffmpeg not available): {mp3_output}")
+            # For M4A format, use ffmpeg for conversion
+            print(f"Saving test M4A file: {output_file}")
             
-            # Use soundfile to save as WAV temporarily
+            # First save as WAV temporarily
             wav_temp = output_file.replace('.m4a', '.wav')
             sf.write(wav_temp, audio_data, sr)
             
-            # Rename to MP3 for compatibility (simple workaround)
-            import shutil
-            if os.path.exists(mp3_output):
-                os.remove(mp3_output)
-            shutil.copy(wav_temp, mp3_output)
-            os.remove(wav_temp)
-            
-            print(f"Successfully saved test MP3 file: {mp3_output}")
+            # Then convert to M4A using ffmpeg
+            try:
+                subprocess.run([
+                    'ffmpeg', '-y', '-i', wav_temp,
+                    '-c:a', 'aac', '-strict', 'experimental',
+                    '-b:a', '128k', output_file
+                ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"Successfully saved test M4A file: {output_file}")
+            except subprocess.CalledProcessError as e:
+                print(f"Error converting to M4A: {str(e)}")
+                raise
+            finally:
+                # Clean up temporary file
+                if os.path.exists(wav_temp):
+                    os.remove(wav_temp)
         else:
             # For other formats, use soundfile directly
             sf.write(output_file, audio_data, sr)

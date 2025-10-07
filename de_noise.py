@@ -1,11 +1,26 @@
+import os
+import sys
+import numpy as np
 import librosa
 import noisereduce as nr
-import os
-import argparse
 from pathlib import Path
-import time
+import argparse
 from tqdm import tqdm
-import numpy as np
+import subprocess
+import time
+
+# Check if ffmpeg is installed
+try:
+    # Try to find ffmpeg in PATH
+    if os.system('which ffmpeg > /dev/null 2>&1') != 0:
+        print("ERROR: ffmpeg is required but not detected!")
+        print("Please install ffmpeg and try again.")
+        print("Installation command example (Homebrew): brew install ffmpeg")
+        sys.exit(1)
+    print("ffmpeg installation detected")
+except Exception:
+    print("ERROR: ffmpeg is required but error occurred during detection!")
+    sys.exit(1)
 
 
 def reduce_noise(input_file, output_file=None, noise_sample_duration=2.0, chunk_duration=30):
@@ -92,32 +107,9 @@ def reduce_noise(input_file, output_file=None, noise_sample_duration=2.0, chunk_
         print(f"Saving processed audio to: {output_file}")
         start_time = time.time()
         
-        # Check if file extension is M4A
-        if output_file.lower().endswith('.m4a'):
-            # For M4A format, we need to use a different approach since ffmpeg is missing
-            # We'll save as WAV first, then convert extension to MP3 for compatibility
-            # This is a workaround to avoid requiring ffmpeg
-            wav_output = output_file.replace('.m4a', '.mp3')
-            print(f"Saving as MP3 instead of M4A (ffmpeg not available): {wav_output}")
-            
-            # Use soundfile to save as WAV temporarily
-            import soundfile as sf
-            wav_temp = output_file.replace('.m4a', '.wav')
-            sf.write(wav_temp, reduced_noise, sr)
-            
-            # Rename to MP3 for compatibility (simple workaround)
-            import shutil
-            if os.path.exists(wav_output):
-                os.remove(wav_output)
-            shutil.copy(wav_temp, wav_output)
-            os.remove(wav_temp)
-            
-            # Update output_file to reflect the actual saved file
-            output_file = wav_output
-        else:
-            # For other formats, continue using soundfile
-            import soundfile as sf
-            sf.write(output_file, reduced_noise, sr)
+        # Save processed audio using soundfile
+        import soundfile as sf
+        sf.write(output_file, reduced_noise, sr)
         
         save_time = time.time() - start_time
         print(f"Audio saved successfully! Saving time: {save_time:.2f} seconds")

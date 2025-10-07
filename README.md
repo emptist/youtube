@@ -91,8 +91,8 @@ You can modify the following in both scripts:
 
 ## Notes
 
-- The scripts do not require ffmpeg for basic functionality, but installing ffmpeg is **strongly recommended** for proper MP3 compression and better audio quality.
-- Without ffmpeg, audio files will be saved with basic 16-bit conversion but won't achieve the full compression benefits of MP3 format.
+- **ffmpeg is required** for all functionality, including MP3 compression and audio format conversion.
+- Installation instructions for ffmpeg are provided below.
 - For macOS users: Install ffmpeg using Homebrew with `brew install ffmpeg`
 - For Windows users: Download ffmpeg from https://ffmpeg.org/download.html and add it to your system PATH
 

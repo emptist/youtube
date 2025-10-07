@@ -7,6 +7,19 @@ import soundfile as sf
 import librosa
 import time
 
+# Check if ffmpeg is installed
+try:
+    # Try to find ffmpeg in PATH
+    if os.system('which ffmpeg > /dev/null 2>&1') != 0:
+        print("ERROR: ffmpeg is required but not detected!")
+        print("Please install ffmpeg and try again.")
+        print("Installation command example (Homebrew): brew install ffmpeg")
+        sys.exit(1)
+    print("ffmpeg installation detected")
+except Exception:
+    print("ERROR: ffmpeg is required but error occurred during detection!")
+    sys.exit(1)
+
 # This is a simplified test script to verify the download_process_audio.py concept
 # without actually downloading from YouTube
 
@@ -79,25 +92,8 @@ def main():
         # Save processed version
         processed_file = os.path.join(test_dir, f"{name_without_ext}_denoised{ext}")
         
-        # Handle M4A workaround if needed
-        if processed_file.lower().endswith('.m4a'):
-            mp3_output = processed_file.replace('.m4a', '.mp3')
-            print(f"Saving as MP3 instead of M4A: {os.path.basename(mp3_output)}")
-            
-            # Save as WAV first
-            wav_temp = processed_file.replace('.m4a', '.wav')
-            sf.write(wav_temp, processed_audio, sr)
-            
-            # Copy to MP3 (simple workaround)
-            if os.path.exists(mp3_output):
-                os.remove(mp3_output)
-            shutil.copy(wav_temp, mp3_output)
-            os.remove(wav_temp)
-            
-            processed_file = mp3_output
-        else:
-            # Save directly
-            sf.write(processed_file, processed_audio, sr)
+        # Save processed audio directly
+        sf.write(processed_file, processed_audio, sr)
         
         process_time = time.time() - start_time
         print(f"Audio processing completed in {process_time:.2f} seconds")
