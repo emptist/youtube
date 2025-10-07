@@ -1,0 +1,10 @@
+[project]
+name = "youtube-media-downloader"
+version = "0.1.0"
+description = "Download audio and video from YouTube"
+
+[dependencies]
+yt-dlp = ">=2024.0"
+noisereduce = ">=2.0"
+librosa = ">=0.10.0"
+soundfile = ">=0.12.0"
