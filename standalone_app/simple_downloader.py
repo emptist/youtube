@@ -10,6 +10,10 @@ import yt_dlp
 import subprocess
 import re
 import urllib.request
+import shutil
+
+# Import noise reduction function
+from de_noise import reduce_noise
 
 class SimpleYouTubeDownloader:
     def __init__(self, root):
@@ -40,6 +44,10 @@ class SimpleYouTubeDownloader:
         
         # Format selection
         self.format_var = tk.StringVar(value="m4a")
+        
+        # Noise reduction options
+        self.apply_denoise = tk.BooleanVar(value=False)
+        self.keep_original_audio = tk.BooleanVar(value=True)
         
         # Initialize ffmpeg status to False before GUI creation
         self.has_ffmpeg = False
@@ -120,6 +128,24 @@ class SimpleYouTubeDownloader:
         self.m4a_radio.pack(side=tk.LEFT, padx=10)
         self.mp3_radio = ttk.Radiobutton(self.format_frame, text="MP3 (Compatibility)", variable=self.format_var, value="mp3")
         self.mp3_radio.pack(side=tk.LEFT, padx=10)
+        
+        # Noise reduction options
+        self.denoise_frame = ttk.LabelFrame(main_frame, text="Audio Enhancement", padding="10")
+        self.denoise_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        self.denoise_checkbox = ttk.Checkbutton(
+            self.denoise_frame,
+            text="Apply Noise Reduction",
+            variable=self.apply_denoise
+        )
+        self.denoise_checkbox.pack(anchor=tk.W, pady=(0, 5))
+        
+        self.keep_original_checkbox = ttk.Checkbutton(
+            self.denoise_frame,
+            text="Keep Original Audio File",
+            variable=self.keep_original_audio
+        )
+        self.keep_original_checkbox.pack(anchor=tk.W, pady=(0, 5))
         
         # Proxy settings
         proxy_frame = ttk.LabelFrame(main_frame, text="Proxy Settings", padding="10")
@@ -206,11 +232,19 @@ class SimpleYouTubeDownloader:
             self.mp3_radio.pack(side=tk.LEFT, padx=10)  # Make MP3 option visible
             self.mp3_radio.config(state=tk.NORMAL)
             self.format_frame.config(text="Audio Format Options")
+            # Enable noise reduction options for audio
+            self.denoise_frame.config(state=tk.NORMAL)
+            self.denoise_checkbox.config(state=tk.NORMAL)
+            self.keep_original_checkbox.config(state=tk.NORMAL)
         else:
             # For video downloads, hide audio format options
             self.m4a_radio.config(state=tk.DISABLED)
             self.mp3_radio.pack_forget()  # Hide MP3 option
             self.format_frame.config(text="Video will be downloaded in MP4 format")
+            # Disable noise reduction options for video
+            self.denoise_frame.config(state=tk.DISABLED)
+            self.denoise_checkbox.config(state=tk.DISABLED)
+            self.keep_original_checkbox.config(state=tk.DISABLED)
     
     def paste_url(self):
         # Clear current entry
@@ -380,7 +414,30 @@ class SimpleYouTubeDownloader:
                 # Get the actual filename
                 filename = ydl.prepare_filename(info)
                 
-
+                # If noise reduction is requested, process the file
+                if self.apply_denoise.get():
+                    self.log_message("Starting noise reduction process...")
+                    
+                    # Create a raw version if we're keeping the original
+                    if self.keep_original_audio.get():
+                        raw_file = filename.replace('.', '_raw.')
+                        if os.path.exists(raw_file):
+                            os.remove(raw_file)
+                        shutil.copy2(filename, raw_file)
+                        self.log_message(f"Raw audio saved as: {os.path.basename(raw_file)}")
+                    
+                    try:
+                        # Apply noise reduction
+                        denoised_file = reduce_noise(filename)
+                        self.log_message(f"Noise reduction completed: {os.path.basename(denoised_file)}")
+                        
+                        # If we're not keeping the original, rename the denoised file to the original name
+                        if not self.keep_original_audio.get():
+                            os.remove(filename)
+                            os.rename(denoised_file, filename)
+                            self.log_message(f"Final audio saved as: {os.path.basename(filename)}")
+                    except Exception as e:
+                        self.log_message(f"Error during noise reduction: {str(e)}")
                 
                 self.log_message(f"Download completed: {os.path.basename(filename)}")
                 self.log_message(f"File saved to: {self.download_dir}")
