@@ -5,7 +5,7 @@ import AppKit
 import PythonKit
 
 @main
-struct SwiftYTXcode: App {
+struct YTDownloader: App {
     init() {
         // Configure application settings
         NSApplication.shared.setActivationPolicy(.regular)
@@ -42,8 +42,8 @@ struct ContentView: View {
     
     // Enum for download type selection
     enum DownloadType: String, CaseIterable, Identifiable {
-        case audio = "Audio Only"
-        case video = "Video + Audio"
+        case audio = "Audio"
+        case video = "Video"
         
         var id: String { self.rawValue }
     }
@@ -57,6 +57,7 @@ struct ContentView: View {
     }
     
     var body: some View {
+        
         VStack {
             // Header
             Text("YouTube Media Downloader")
@@ -170,7 +171,7 @@ struct ContentView: View {
                 Button(action: {
                     downloadMedia()
                 }) {
-                    Text("Start Download")
+                    Text("Download")
                         .multilineTextAlignment(.center)
                         .padding()
                         .background(Color.blue)
