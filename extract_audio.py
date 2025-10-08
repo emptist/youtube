@@ -1,7 +1,6 @@
 import yt_dlp
 import ssl
 import os
-import yt_dlp
 
 # Configure SSL context to handle potential certificate issues
 ssl_context = ssl.create_default_context()
@@ -12,18 +11,25 @@ URLS = [
     'https://www.youtube.com/watch?v=BUJpAzByMjo&t=279s'
 ]
 
+import sys
+import os
+import subprocess
+import argparse
+from pathlib import Path
+
+# Ensure we can import ffmpeg_utils even when running from different locations
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Import the shared ffmpeg utility
+from ffmpeg_utils import check_ffmpeg
+
 # Check if ffmpeg is installed
-try:
-    # Try to find ffmpeg in PATH
-    if os.system('which ffmpeg > /dev/null 2>&1') != 0:
-        print("ERROR: ffmpeg is required but not detected!")
-        print("Please install ffmpeg and try again.")
-        print("Installation command example (Homebrew): brew install ffmpeg")
-        sys.exit(1)
-    print("ffmpeg installation detected")
-except Exception:
-    print("ERROR: ffmpeg is required but error occurred during detection!")
+success, message = check_ffmpeg()
+if not success:
+    print(f"ERROR: {message}")
     sys.exit(1)
+
+print(message)
 
 # Set download directory to user's Downloads folder
 download_dir = os.path.expanduser('~/Downloads')

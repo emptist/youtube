@@ -34,51 +34,13 @@ def _import_heavy_libraries():
     from tqdm import tqdm
     return np, librosa, nr, sf, tqdm
 
-# Function to check ffmpeg installation
-def _check_ffmpeg():
-    """Check if ffmpeg is installed with improved detection logic"""
-    try:
-        # Try multiple methods to check for ffmpeg
-        # Method 1: which command (UNIX)
-        if os.name == 'posix':  # macOS/Linux
-            result = os.system('which ffmpeg > /dev/null 2>&1')
-            if result == 0:
-                return True, "ffmpeg installation detected"
-        
-        # Method 2: where command (Windows)
-        elif os.name == 'nt':  # Windows
-            result = os.system('where ffmpeg > NUL 2>&1')
-            if result == 0:
-                return True, "ffmpeg installation detected"
-        
-        # Method 3: Direct command execution
-        try:
-            subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-            return True, "ffmpeg installation detected"
-        except (subprocess.SubprocessError, FileNotFoundError):
-            pass
-        
-        # Check common installation paths
-        common_paths = []
-        if os.name == 'posix':
-            common_paths = ['/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg', '/usr/bin/ffmpeg']
-        elif os.name == 'nt':
-            common_paths = [os.path.join(os.environ.get('ProgramFiles', ''), 'ffmpeg', 'bin', 'ffmpeg.exe')]
-        
-        for path in common_paths:
-            if path and os.path.exists(path) and os.access(path, os.X_OK):
-                return True, f"ffmpeg detected at: {path}"
-        
-        # Method 4: Use shutil.which to check PATH (more cross-platform)
-        import shutil
-        ffmpeg_path = shutil.which('ffmpeg')
-        if ffmpeg_path:
-            return True, f"ffmpeg detected at: {ffmpeg_path}"
-        
-        error_msg = ("ffmpeg is required but not detected!\n" "Please install ffmpeg and ensure it's in your system PATH.\n" "Installation instructions:\n" "- macOS: brew install ffmpeg\n" "- Windows: Download from https://ffmpeg.org/download.html\n" "- Linux: Use your package manager (e.g., sudo apt install ffmpeg)")
-        return False, error_msg
-    except Exception as e:
-        return False, f"Error checking ffmpeg: {str(e)}"
+# Add the parent directory to Python path to import ffmpeg_utils
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import the shared ffmpeg utility
+from ffmpeg_utils import check_ffmpeg as _check_ffmpeg
 
 
 def reduce_noise(

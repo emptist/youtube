@@ -7,19 +7,19 @@ import soundfile as sf
 import argparse
 import subprocess
 
+# Ensure we can import ffmpeg_utils even when running from different locations
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Import the shared ffmpeg utility
+from ffmpeg_utils import check_ffmpeg
+
 # Check if ffmpeg is installed
-try:
-    # Try to find ffmpeg in PATH
-    subprocess.run(['which', 'ffmpeg'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-    print("ffmpeg installation detected")
-except subprocess.CalledProcessError:
-    print("ERROR: ffmpeg is required but not detected!")
-    print("Please install ffmpeg and try again.")
-    print("Installation command example (Homebrew): brew install ffmpeg")
+success, message = check_ffmpeg()
+if not success:
+    print(f"ERROR: {message}")
     sys.exit(1)
-except Exception:
-    print("ERROR: ffmpeg is required but error occurred during detection!")
-    sys.exit(1)
+
+print(message)
 
 """
 Helper script to test M4A audio saving functionality.

@@ -140,12 +140,16 @@ class AudioDenoiseApp:
     
     def check_ffmpeg_installation(self):
         try:
-            # Check if ffmpeg is available
-            if os.system('which ffmpeg > /dev/null 2>&1') != 0:
-                self.log_message("Warning: ffmpeg is not detected! Some audio formats may not be supported.")
-                self.log_message("Please install ffmpeg for best results.")
-            else:
+            # Import the shared ffmpeg utility
+            from ffmpeg_utils import check_ffmpeg
+            
+            # Use the shared utility to check for ffmpeg
+            is_installed, message = check_ffmpeg()
+            
+            if is_installed:
                 self.log_message("ffmpeg installation detected")
+            else:
+                self.log_message(f"Warning: {message}")
         except Exception as e:
             self.log_message(f"Error checking ffmpeg: {str(e)}")
     

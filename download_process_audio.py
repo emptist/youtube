@@ -220,17 +220,24 @@ def main():
     print("and immediately apply noise reduction, saving both versions.")
     print(f"Files will be saved to: {download_dir}")
     
-    # Check if ffmpeg is installed
+        # Ensure we can import ffmpeg_utils even when running from different locations
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+    # Import the shared ffmpeg utility
     try:
-        # Try to find ffmpeg in PATH
-        if os.system('which ffmpeg > /dev/null 2>&1') != 0:
-            print("ERROR: ffmpeg is required but not detected!")
-            print("Please install ffmpeg and try again.")
-            print("Installation command example (Homebrew): brew install ffmpeg")
+        from ffmpeg_utils import check_ffmpeg
+
+        # Check if ffmpeg is installed
+        success, message = check_ffmpeg()
+        if not success:
+            print(f"ERROR: {message}")
             sys.exit(1)
-        print("ffmpeg installation detected")
-    except Exception:
-        print("ERROR: ffmpeg is required but error occurred during detection!")
+        print(message)
+    except ImportError:
+        print("ERROR: Could not import ffmpeg_utils module. Please ensure it's in the same directory.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: ffmpeg is required but error occurred during detection! {str(e)}")
         sys.exit(1)
     
     # Build output template path

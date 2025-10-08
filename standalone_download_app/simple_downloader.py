@@ -274,46 +274,27 @@ class SimpleYouTubeDownloader:
     
     def check_ffmpeg_installation(self):
         try:
-            # Try multiple methods to check for ffmpeg
-            self.has_ffmpeg = False
+            # Add parent directory to Python path to import ffmpeg_utils
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             
-            # Method 1: Direct command execution
-            try:
-                subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            # Import the shared ffmpeg utility
+            from ffmpeg_utils import check_ffmpeg, get_ffmpeg_path
+            
+            # Use the shared utility to check for ffmpeg
+            is_installed, message = check_ffmpeg()
+            
+            if is_installed:
                 self.has_ffmpeg = True
-                self.log_message("ffmpeg installation detected. Audio conversion available.")
-                return
-            except (subprocess.SubprocessError, FileNotFoundError):
-                pass
-            
-            # Method 2: Check common installation paths based on OS
-            common_paths = []
-            if os.name == 'posix':  # macOS/Linux
-                common_paths = ['/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg', '/usr/bin/ffmpeg', '/bin/ffmpeg']
-            elif os.name == 'nt':  # Windows
-                common_paths = [os.path.join(os.environ.get('ProgramFiles', ''), 'ffmpeg', 'bin', 'ffmpeg.exe')]
-            
-            for path in common_paths:
-                if path and os.path.isfile(path) and os.access(path, os.X_OK):
-                    # Found ffmpeg at a known path
-                    self.has_ffmpeg = True
-                    self.log_message(f"ffmpeg installation detected at {path}. Audio conversion available.")
-                    return
-            
-            # Method 3: Use shutil.which to check PATH (more cross-platform)
-            ffmpeg_path = shutil.which('ffmpeg')
-            if ffmpeg_path:
-                self.has_ffmpeg = True
-                self.log_message(f"ffmpeg installation detected at {ffmpeg_path}. Audio conversion available.")
-                return
-            
-            # If we get here, ffmpeg wasn't found
-            self.has_ffmpeg = False
-            self.log_message("ERROR: ffmpeg is required but not detected. Please install ffmpeg.")
-            self.log_message("Installation instructions:")
-            self.log_message("- macOS: brew install ffmpeg")
-            self.log_message("- Windows: Download from https://ffmpeg.org/download.html")
-            self.log_message("- Linux: Use your package manager (e.g., sudo apt install ffmpeg)")
+                ffmpeg_path = get_ffmpeg_path()
+                if ffmpeg_path:
+                    self.log_message(f"ffmpeg installation detected at {ffmpeg_path}. Audio conversion available.")
+                else:
+                    self.log_message("ffmpeg installation detected. Audio conversion available.")
+            else:
+                self.has_ffmpeg = False
+                self.log_message(f"ERROR: {message}")
         except Exception as e:
             self.has_ffmpeg = False
             self.log_message(f"ERROR: ffmpeg is required but error occurred: {str(e)}")

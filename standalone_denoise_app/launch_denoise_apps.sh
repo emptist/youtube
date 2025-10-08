@@ -23,7 +23,7 @@ show_menu() {
 # Function to check if ffmpeg is installed with improved detection
 check_ffmpeg() {
     # Method 1: command -v (standard way)
-    if command -v ffmpeg &> /dev/null; then
+    if command -v ffmpeg >/dev/null 2>&1; then
         echo "✓ ffmpeg found in PATH"
         return 0
     fi

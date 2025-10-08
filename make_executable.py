@@ -34,16 +34,58 @@ def make_script_executable(file_path):
         return False
 
 def create_launcher_script(app_name, script_path):
-    """Create a simple launcher script for the application"""
+    """Create a launcher script for the application with ffmpeg detection"""
     launcher_path = os.path.join(os.path.dirname(script_path), f"launch_{app_name}.sh")
     try:
         with open(launcher_path, 'w') as f:
-            f.write(f"#!/bin/bash\n")
+            f.write(f"#!/bin/bash\n\n")
+            
+            # Add ffmpeg detection function
+            f.write(f"# Function to check if ffmpeg is installed with improved detection\n")
+            f.write(f"check_ffmpeg() {\n")
+            f.write(f"    # Method 1: command -v (standard way)\n")
+            f.write(f"    if command -v ffmpeg >/dev/null 2>&1; then\n")
+            f.write(f"        echo \"✓ ffmpeg found in PATH\"\n")
+            f.write(f"        return 0\n")
+            f.write(f"    fi\n\n")
+            f.write(f"    # Method 2: Check common installation paths\n")
+            f.write(f"    local common_paths=(\"/usr/local/bin/ffmpeg\" \"/opt/homebrew/bin/ffmpeg\" \"/usr/bin/ffmpeg\")\n\n")
+            f.write(f"    for path in \"${{common_paths[@]}}\"; do\n")
+            f.write(f"        if [[ -x \"$path\" ]]; then\n")
+            f.write(f"            echo \"✓ ffmpeg found at $path\"\n")
+            f.write(f"            # Add to PATH for this session if not already there\n")
+            f.write(f"            if [[ ! \"$PATH\" == *\"$(dirname \"$path\")\"* ]]; then\n")
+            f.write(f"                echo \"Adding $path to PATH for this session\"\n")
+            f.write(f"                export PATH=\"$(dirname \"$path\"):$PATH\"\n")
+            f.write(f"            fi\n")
+            f.write(f"            return 0\n")
+            f.write(f"        fi\n")
+            f.write(f"    done\n\n")
+            f.write(f"    # If we get here, ffmpeg is not found\n")
+            f.write(f"    echo \"Error: ffmpeg is required but not installed or not in PATH.\" >&2\n")
+            f.write(f"    echo \"Please install ffmpeg before running this application.\" >&2\n")
+            f.write(f"    echo \"Installation instructions for different platforms:\" >&2\n")
+            f.write(f"    echo \"- macOS: brew install ffmpeg\" >&2\n")
+            f.write(f"    echo \"- Ubuntu/Debian: sudo apt install ffmpeg\" >&2\n")
+            f.write(f"    echo \"- Windows: Download from https://ffmpeg.org/download.html\" >&2\n\n")
+            f.write(f"    echo -e \"\\nPress Enter to exit...\"\n")
+            f.write(f"    read -r\n")
+            f.write(f"    return 1\n")
+            f.write(f"}\n\n")
+            
+            # Check for ffmpeg
+            f.write(f"# Check for ffmpeg\n")
+            f.write(f"echo -e \"\\nChecking for ffmpeg installation...\"\n")
+            f.write(f"check_ffmpeg\n\n")
+            
+            # Run the application
+            f.write(f"# Run the application\n")
             f.write(f"cd '{os.path.dirname(script_path)}'\n")
+            f.write(f"echo -e \"\\nStarting {app_name}...\\n\"\n")
             f.write(f"python3 '{os.path.basename(script_path)}'\n")
             f.write(f"exit_code=$?\n")
-            f.write(f"echo 'Application exited with code $exit_code'\n")
-            f.write(f"read -p 'Press Enter to continue...'\n")
+            f.write(f"echo \"Application exited with code $exit_code\"\n")
+            f.write(f"read -p \"Press Enter to continue...\"\n")
         
         # Make the launcher executable
         st = os.stat(launcher_path)
