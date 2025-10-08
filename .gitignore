@@ -77,3 +77,31 @@ jspm_packages/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Swift build directories
+/.build/
+/.swiftpm/
+**/.build/
+**/.swiftpm/
+
+# Swift compiled files
+*.swiftdoc
+*.swiftmodule
+*.o
+*.dylib
+*.so
+
+# Xcode build files
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+*.xcuserstate
+*.xcsettings
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# macOS application bundles
+*.app/
+!.app/Contents/Resources/

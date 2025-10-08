@@ -1,0 +1,31 @@
+# Swift build directories
+.build/
+.swiftpm/
+
+# Xcode files
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+*.xcuserstate
+*.xcsettings
+
+# Compiled files
+*.swiftdoc
+*.swiftmodule
+*.o
+*.dylib
+*.so
+
+# Package files
+Package.resolved
+
+# macOS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
