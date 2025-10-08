@@ -5,7 +5,7 @@ a = Analysis(
     ['simple_downloader.py'],
     pathex=[],
     binaries=[],
-    datas=[('de_noise.py', '.')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='simple_downloader',
+    name='SimpleYouTubeDownloader',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -38,7 +38,7 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='simple_downloader.app',
+    name='SimpleYouTubeDownloader.app',
     icon=None,
     bundle_identifier=None,
 )

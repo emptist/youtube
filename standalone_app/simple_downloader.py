@@ -386,6 +386,8 @@ class SimpleYouTubeDownloader:
                 # Quiet output to prevent console spam
                 'quiet': True,
                 'no_warnings': True,
+                # Ensure ffmpeg is used for postprocessing even when running standalone
+                'ffmpeg_location': shutil.which('ffmpeg') or '',
             }
             
             # Add proxy if configured
@@ -429,24 +431,21 @@ class SimpleYouTubeDownloader:
                 if self.apply_denoise.get():
                     self.log_message("Starting noise reduction process...")
                     
-                    # Create a raw version if we're keeping the original
+                    # No need to create a raw version as we'll keep the original file directly
                     if self.keep_original_audio.get():
-                        raw_file = filename.replace('.', '_raw.')
-                        if os.path.exists(raw_file):
-                            os.remove(raw_file)
-                        shutil.copy2(filename, raw_file)
-                        self.log_message(f"Raw audio saved as: {os.path.basename(raw_file)}")
+                        self.log_message(f"Will keep original audio file: {os.path.basename(filename)}")
                     
                     try:
                         # Apply noise reduction
                         denoised_file = reduce_noise_func(filename)
                         self.log_message(f"Noise reduction completed: {os.path.basename(denoised_file)}")
                         
-                        # If we're not keeping the original, rename the denoised file to the original name
+                        # Always keep the '_denoised' suffix for clarity
                         if not self.keep_original_audio.get():
+                            # Keep the denoised file with its suffix
+                            # Just remove the original file without renaming
                             os.remove(filename)
-                            os.rename(denoised_file, filename)
-                            self.log_message(f"Final audio saved as: {os.path.basename(filename)}")
+                            self.log_message(f"Final denoised audio saved as: {os.path.basename(denoised_file)}")
                     except Exception as e:
                         self.log_message(f"Error during noise reduction: {str(e)}")
                 
