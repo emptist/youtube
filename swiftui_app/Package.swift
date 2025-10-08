@@ -6,10 +6,9 @@ import PackageDescription
 let package = Package(
     name: "SwiftUIDownloader",
     platforms: [
-        .macOS(.v11)
+        .macOS(.v15)
     ],
     dependencies: [
-        // PythonKit for Python integration
         .package(url: "https://github.com/pvieito/PythonKit.git", from: "0.5.0")
     ],
     targets: [
