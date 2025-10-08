@@ -186,52 +186,21 @@ class BatchAudioDenoiseApp:
     
     def check_ffmpeg_installation(self):
         try:
-            # Try multiple methods to check for ffmpeg
-            ffmpeg_available = False
+            # Add parent directory to Python path to import ffmpeg_utils
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             
-            # Method 1: which command (UNIX)
-            if os.name == 'posix':  # macOS/Linux
-                result = os.system('which ffmpeg > /dev/null 2>&1')
-                if result == 0:
-                    ffmpeg_available = True
+            # Import the shared ffmpeg utility
+            from ffmpeg_utils import check_ffmpeg
             
-            # Method 2: where command (Windows)
-            elif os.name == 'nt':  # Windows
-                result = os.system('where ffmpeg > NUL 2>&1')
-                if result == 0:
-                    ffmpeg_available = True
+            # Use the shared utility to check for ffmpeg
+            is_installed, message = check_ffmpeg()
             
-            # Method 3: Direct command execution
-            if not ffmpeg_available:
-                try:
-                    import subprocess
-                    subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-                    ffmpeg_available = True
-                except (subprocess.SubprocessError, FileNotFoundError):
-                    pass
-            
-            # Method 4: Check common installation paths
-            if not ffmpeg_available:
-                common_paths = []
-                if os.name == 'posix':
-                    common_paths = ['/usr/local/bin/ffmpeg', '/opt/homebrew/bin/ffmpeg', '/usr/bin/ffmpeg']
-                elif os.name == 'nt':
-                    common_paths = [os.path.join(os.environ.get('ProgramFiles', ''), 'ffmpeg', 'bin', 'ffmpeg.exe')]
-                
-                for path in common_paths:
-                    if os.path.exists(path) and os.access(path, os.X_OK):
-                        ffmpeg_available = True
-                        break
-            
-            if ffmpeg_available:
+            if is_installed:
                 self.log_message("ffmpeg installation detected")
             else:
-                self.log_message("Warning: ffmpeg is not detected! Some audio formats may not be supported.")
-                self.log_message("Please install ffmpeg for best results.")
-                self.log_message("Installation instructions:")
-                self.log_message("- macOS: brew install ffmpeg")
-                self.log_message("- Windows: Download from https://ffmpeg.org/download.html")
-                self.log_message("- Linux: Use your package manager (e.g., sudo apt install ffmpeg)")
+                self.log_message(f"Warning: {message}")
         except Exception as e:
             self.log_message(f"Error checking ffmpeg: {str(e)}")
     
