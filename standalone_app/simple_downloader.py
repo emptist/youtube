@@ -242,7 +242,7 @@ class SimpleYouTubeDownloader:
             self.mp3_radio.config(state=tk.NORMAL)
             self.format_frame.config(text="Audio Format Options")
             # Enable noise reduction options for audio
-            self.denoise_frame.config(state=tk.NORMAL)
+            # LabelFrame doesn't support state option, so just enable the widgets inside
             self.denoise_checkbox.config(state=tk.NORMAL)
             self.keep_original_checkbox.config(state=tk.NORMAL)
         else:
@@ -251,7 +251,7 @@ class SimpleYouTubeDownloader:
             self.mp3_radio.pack_forget()  # Hide MP3 option
             self.format_frame.config(text="Video will be downloaded in MP4 format")
             # Disable noise reduction options for video
-            self.denoise_frame.config(state=tk.DISABLED)
+            # LabelFrame doesn't support state option, so just disable the widgets inside
             self.denoise_checkbox.config(state=tk.DISABLED)
             self.keep_original_checkbox.config(state=tk.DISABLED)
     
