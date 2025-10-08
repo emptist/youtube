@@ -197,8 +197,8 @@ struct ContentView: View {
                 let dirName = inputFile.deletingLastPathComponent()
                 let baseName = inputFile.lastPathComponent
                 let nameWithoutExt = baseName.split(separator: ".").dropLast().joined(separator: ".")
-                let ext = baseName.split(separator: ".").last ?? ""
-                let outputFileName = "denoised_" + nameWithoutExt + "." + (ext as String)
+                let ext = baseName.split(separator: ".").last.map(String.init) ?? ""
+                let outputFileName = "denoised_" + nameWithoutExt + "." + ext
                 outputFile = dirName.appendingPathComponent(outputFileName)
             }
         }
@@ -257,12 +257,21 @@ struct ContentView: View {
                 // Import the Python noise reduction module
                 let de_noise = Python.import("de_noise")
                 
-                // Call the Python function for noise reduction with parameters
-                let inputPathObj = PythonObject(inputFile.path)
-                let outputPathObj = PythonObject(outputFile.path)
-                _ = de_noise.reduce_noise(inputPathObj, outputPathObj, 
-                                         noise_sample_duration: PythonObject(noiseSampleDuration),
-                                         chunk_duration: PythonObject(chunkDuration))
+                // Get all UI values within the main actor context
+                let (inputFileCopy, outputFileCopy, noiseDurationCopy, chunkDurationCopy) = await Task { @MainActor in
+                    return (inputFile, outputFile, noiseSampleDuration, chunkDuration)
+                }.value
+                
+                // Call the Python function for noise reduction with parameters in a detached task
+                _ = await Task.detached { () -> PythonObject in
+                    let inputPathObj = PythonObject(inputFileCopy.path)
+                    let outputPathObj = PythonObject(outputFileCopy.path)
+                    let noiseSampleDurationObj = PythonObject(noiseDurationCopy)
+                    let chunkDurationObj = PythonObject(chunkDurationCopy)
+                    return de_noise.reduce_noise(inputPathObj, outputPathObj, 
+                                                noise_sample_duration: noiseSampleDurationObj,
+                                                chunk_duration: chunkDurationObj)
+                }.value
                 
                 // Check if any Python exception occurred
                 let pythonException = Python.exception()

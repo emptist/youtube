@@ -61,21 +61,19 @@ struct ContentView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
             
-            // URL Input Section
-            VStack {
-                HStack {
-                    Text("YouTube URL:")
-                        .frame(width: 150, alignment: .leading)
-                    TextField("https://www.youtube.com/watch?v=", text: $urlString)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: .infinity)
-                        .disabled(isProcessing)
-                }
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(5)
+            // URL Input Section - Made more prominent
+            HStack {
+                Text("YouTube URL:")
+                    .font(.title2)
+                TextField("https://www.youtube.com/watch?v=", text: $urlString)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .font(.system(size: 16))
+                    .disabled(isProcessing)
             }
             .padding()
+            .background(Color.blue.opacity(0.05))
+            .cornerRadius(8)
             
             // Download Directory Section
             VStack {
@@ -270,16 +268,36 @@ struct ContentView: View {
                     }
                 }
                 
-                // Import the Python downloader module or run the script
-                // For simplicity, we'll just simulate progress here
-                // In a real application, you would call the actual download function
+                // Get values from main actor
+                let (localUrlString, localDownloadDirectory, localDownloadType, localAudioFormat, localApplyNoiseReduction) = await MainActor.run {
+                    return (
+                        urlString,
+                        downloadDirectory.path,
+                        downloadType == .audio ? "audio" : "video",
+                        audioFormat.rawValue.lowercased(),
+                        applyNoiseReduction
+                    )
+                }
                 
-                // Simulate progress updates
-                for i in 1...10 {
-                    try await Task.sleep(nanoseconds: 1_000_000_000) // Sleep for 1 second
+                // Call the helper function that performs the Python integration
+                let (stdout, stderr) = try await runPythonDownloader(
+                    url: localUrlString,
+                    directory: localDownloadDirectory,
+                    downloadType: localDownloadType,
+                    audioFormat: localAudioFormat,
+                    applyNoiseReduction: localApplyNoiseReduction
+                )
+                
+                // Process and log the output
+                if !stdout.isEmpty {
                     await MainActor.run {
-                        self.progress = Double(i) / 10.0
-                        self.logMessage("Download progress: \(Int(self.progress * 100))%")
+                        self.logMessage("Python output:\n" + stdout)
+                    }
+                }
+                
+                if !stderr.isEmpty {
+                    await MainActor.run {
+                        self.logMessage("Python warnings:\n" + stderr)
                     }
                 }
                 
@@ -336,5 +354,84 @@ struct ContentView: View {
         // Simple proxy detection
         // In a real app, you would use CFNetwork or other APIs to detect system proxies
         return nil
+    }
+    
+    // Helper function to run the Python downloader in a separate task
+    private func runPythonDownloader(
+        url: String,
+        directory: String,
+        downloadType: String,
+        audioFormat: String,
+        applyNoiseReduction: Bool
+    ) async throws -> (stdout: String, stderr: String) {
+        // This function will be executed in a separate task
+        return try await withTaskCancellationHandler {
+            // Set up Python environment
+            let sys = Python.import("sys")
+            let pythonScriptPath = "/Users/jk/gits/hub/youtube"
+            
+            // Add the directory containing simple_downloader.py to Python path
+            let pythonPathObj = PythonObject(pythonScriptPath)
+            if Python.bool(sys.path.__contains__(pythonPathObj)) == false {
+                sys.path.append(pythonPathObj)
+            }
+            
+            // Import the Python downloader module
+            let simple_downloader = Python.import("simple_downloader")
+            
+            // Convert Swift values to Python objects
+            let urlObj = PythonObject(url)
+            let directoryObj = PythonObject(directory)
+            let downloadTypeObj = PythonObject(downloadType)
+            let formatObj = PythonObject(audioFormat)
+            let denoiseObj = PythonObject(applyNoiseReduction)
+            
+            // Set stdout and stderr to capture output
+            let io = Python.import("io")
+            let old_stdout = sys.stdout
+            let old_stderr = sys.stderr
+            let new_stdout = io.StringIO()
+            let new_stderr = io.StringIO()
+            sys.stdout = new_stdout
+            sys.stderr = new_stderr
+            
+            do {
+                // Call the download function
+                let _ = simple_downloader.download_video(
+                    url: urlObj,
+                    output_path: directoryObj,
+                    download_type: downloadTypeObj,
+                    audio_format: formatObj,
+                    denoise: denoiseObj
+                )
+                
+                // Get the captured output
+                let stdout_value = new_stdout.getvalue()
+                let stderr_value = new_stderr.getvalue()
+                
+                // Convert Python strings to Swift strings
+                let stdout_str = String(describing: stdout_value)
+                let stderr_str = String(describing: stderr_value)
+                
+                // Restore stdout and stderr
+                sys.stdout = old_stdout
+                sys.stderr = old_stderr
+                
+                return (stdout: stdout_str, stderr: stderr_str)
+            } catch {
+                // Get the captured error
+                let stderr_value = new_stderr.getvalue()
+                let stderr_str = String(describing: stderr_value)
+                
+                // Restore stdout and stderr
+                sys.stdout = old_stdout
+                sys.stderr = old_stderr
+                
+                // Handle all errors
+                throw NSError(domain: "PythonError", code: 1, userInfo: ["stderr": stderr_str, "error": String(describing: error)])
+            }
+        } onCancel: {
+            // Handle cancellation if needed
+        }
     }
 }
