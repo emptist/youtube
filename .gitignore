@@ -17,6 +17,8 @@ dist/
 .DS_Store
 .AppleDouble
 .LSOverride
+.Spotlight-V100
+.Trashes
 
 # Windows
 Thumbs.db
@@ -47,6 +49,59 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+
+# Swift Package Manager
+/.build
+/Packages
+.swiftpm/
+**/.build/
+**/Packages/
+**/.swiftpm/
+
+# Xcode
+*.pbxproj
+*.xcworkspace
+*.xcuserstate
+xcuserdata/
+DerivedData/
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Audio files
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.m4a
+
+# Output directories
+output/
+temp/
+downloads/
+**/output/
+**/temp/
+**/downloads/
+
+# Executable files
+*.app/
+*.dylib
+
+# Distribution build folders
+consolidated_dist/
+standalone_app/
+standalone_denoise_app/
+
 
 # nyc test coverage
 .nyc_output/

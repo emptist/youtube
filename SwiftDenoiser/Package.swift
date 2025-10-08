@@ -4,9 +4,9 @@
 import PackageDescription
 
 let package = Package(
-    name: "SwiftUIDownloader",
+    name: "SwiftDenoiser",
     platforms: [
-        .macOS(.v15)
+        .macOS(.v13)
     ],
     dependencies: [
         .package(url: "https://github.com/pvieito/PythonKit.git", from: "0.5.0")
@@ -15,10 +15,11 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
-            name: "SwiftUIDownloader",
+            name: "SwiftDenoiser",
             dependencies: [
                 .product(name: "PythonKit", package: "PythonKit")
-            ]
-        ),
+            ],
+            path: "Sources/SwiftDenoiser"
+        )
     ]
 )

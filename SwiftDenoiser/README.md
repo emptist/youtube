@@ -1,6 +1,10 @@
-# SwiftUI YouTube Downloader with PythonKit Integration
+# SwiftDenoiser
 
-This is a SwiftUI application that uses PythonKit to leverage Python libraries for downloading YouTube videos and processing audio files.
+This is a standalone SwiftUI application that uses PythonKit to leverage Python libraries for audio noise reduction.
+
+## Description
+
+SwiftDenoiser provides a simple user interface for selecting audio files, specifying output locations, and applying noise reduction to your audio recordings. It integrates with Python libraries to perform high-quality audio processing.
 
 ## Requirements
 
@@ -8,7 +12,6 @@ This is a SwiftUI application that uses PythonKit to leverage Python libraries f
 2. Xcode 14.0+ with Swift 5.8+
 3. Python 3.8+ installed on your system
 4. Python libraries:
-   - yt-dlp
    - librosa
    - noisereduce
    - numpy
@@ -19,12 +22,12 @@ This is a SwiftUI application that uses PythonKit to leverage Python libraries f
 ### 1. Install Python Dependencies
 
 ```bash
-pip install yt-dlp librosa noisereduce numpy
+pip install librosa noisereduce numpy
 ```
 
 ### 2. Install FFmpeg
 
-FFmpeg is required for audio extraction and processing:
+FFmpeg is required for audio processing:
 
 ```bash
 # Using Homebrew
@@ -35,7 +38,7 @@ brew install ffmpeg
 
 ```bash
 git clone <repository-url>
-cd youtube/swiftui_app
+cd SwiftDenoiser
 ```
 
 ### 4. Build and Run the Application
@@ -56,24 +59,23 @@ open Package.swift
 
 ## How to Use
 
-1. Enter a valid YouTube URL in the text field
-2. Toggle the "Keep original audio file" option if you want to preserve the original downloaded audio
-3. Click the "Download and Process" button
+1. Click the "Select File" button to choose an audio file for processing
+2. Click the "Select Output Folder" button to choose where the denoised file will be saved
+3. Click the "Denoise" button to start the noise reduction process
 4. The application will:
-   - Download the audio from the YouTube video
-   - Process the audio to reduce noise
-   - Save the processed audio file in the `downloads` directory
+   - Process the selected audio file
+   - Apply noise reduction using the Python backend
+   - Save the denoised audio file in the specified output folder with "denoised_" prefix
 
 ## Project Structure
 
 ```
-swiftui_app/
+SwiftDenoiser/
 ├── Package.swift         # SPM package configuration
 ├── README.md             # This documentation
-├── Sources/
-│   └── SwiftUIDownloader/
-│       └── SwiftUIDownloader.swift  # Main application code
-└── downloads/            # Directory where downloaded files are stored
+└── Sources/
+    └── SwiftDenoiser/
+        └── SwiftDenoiser.swift  # Main application code
 ```
 
 ## Troubleshooting
@@ -92,12 +94,13 @@ Ensure all required Python libraries and FFmpeg are installed correctly.
 
 ### Xcode Compatibility
 
-If you encounter issues building in Xcode, make sure you're using the latest version of Xcode and have selected the correct development team.
+If you encounter issues building in Xcode, make sure you're using the latest version of Xcode.
 
 ## Notes
 
 - This application is designed for macOS only at this time
-- The noise reduction quality may vary depending on the input audio
+- The noise reduction quality may vary depending on the input audio characteristics
+- Supported audio formats depend on what your Python installation can handle
 - Large audio files may take longer to process
 
 ## License

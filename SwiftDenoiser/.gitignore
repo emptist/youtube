@@ -1,27 +1,32 @@
-.DS_Store
-# Xcode
+# SwiftDenoiser .gitignore
+
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
+
+# Windows
 Thumbs.db
-*.swp
-*~
+ehthumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Xcode
 xcuserdata/
 DerivedData/
+*.swp
+*~
 
 # Swift Package Manager
 /.build
 /Packages
 .swiftpm/
-
-# IDEs and editors
-.idea/
-.vscode/
-*.sublime-project
-*.sublime-workspace
 
 # Environment variables
 .env
@@ -35,7 +40,14 @@ DerivedData/
 *.temp
 .cache
 
-# Downloaded files - Do not version control user content
-downloads/
+# Audio files - Do not version control user content
 *.mp3
 *.wav
+*.flac
+*.aac
+*.ogg
+*.m4a
+
+# Output directories
+output/
+temp/
