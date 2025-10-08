@@ -1,0 +1,70 @@
+# SwiftDenoiserXcode .gitignore
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcworkspace
+!default.xcworkspace
+*.xcuserstate
+*.xccheckout
+
+# Swift Package Manager
+.build/
+Packages/
+.swiftpm/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Audio files
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.m4a
+
+# Output directories
+output/
+temp/
+downloads/
+
+# Executables
+*.app/
+*.dylib
+
+# Distribution build folders
+consolidated_dist/
+standalone_app/
+standalone_denoise_app/
