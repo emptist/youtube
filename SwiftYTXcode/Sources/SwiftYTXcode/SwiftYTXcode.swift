@@ -37,6 +37,7 @@ struct ContentView: View {
     @State private var downloadType = DownloadType.audio
     @State private var audioFormat = AudioFormat.m4a
     @State private var applyNoiseReduction = false
+    @State private var keepRawAudio = false
     @State private var logMessages: [String] = []
     
     // Enum for download type selection
@@ -57,51 +58,57 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
+            // Header
             Text("YouTube Media Downloader")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-            
-            // URL Input Section - Made more prominent
-            HStack {
-                Text("YouTube URL:")
-                    .font(.title2)
-                TextField("https://www.youtube.com/watch?v=", text: $urlString)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: .infinity, minHeight: 40)
-                    .font(.system(size: 16))
-                    .disabled(isProcessing)
+                .padding()
+
+            // URL Input Section
+            VStack {
+                HStack {
+                    Text("YouTube URL:")
+                        .frame(width: 150, alignment: .leading)
+                        .font(.system(size: 14))
+                    TextField("https://www.youtube.com/watch?v=", text: $urlString)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: .infinity, minHeight: 30)
+                        .font(.system(size: 14))
+                        .disabled(isProcessing)
+                }
             }
             .padding()
-            .background(Color.blue.opacity(0.05))
-            .cornerRadius(8)
-            
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(5)
+
             // Download Directory Section
             VStack {
                 HStack {
                     Text("Download Directory:")
                         .frame(width: 150, alignment: .leading)
+                        .font(.system(size: 14))
                     Text(downloadDirectory?.lastPathComponent ?? "No directory selected")
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.system(size: 14))
                     Button("Browse") {
                         selectDownloadDirectory()
                     }
                     .disabled(isProcessing)
+                    .font(.system(size: 14))
                 }
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(5)
             }
             .padding()
-            
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(5)
+
             // Download Options Section
             VStack {
                 Text("Download Options")
                     .font(.headline)
-                    .padding()
-                
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 5)
+
                 HStack {
-                    Text("Download Type:")
-                        .frame(width: 150, alignment: .leading)
                     Picker("Download Type", selection: $downloadType) {
                         ForEach(DownloadType.allCases) {
                             Text($0.rawValue)
@@ -110,11 +117,9 @@ struct ContentView: View {
                     .pickerStyle(.segmented)
                     .disabled(isProcessing)
                 }
-                .padding()
-                
+                .padding(.vertical, 5)
+
                 HStack {
-                    Text("Audio Format:")
-                        .frame(width: 150, alignment: .leading)
                     Picker("Audio Format", selection: $audioFormat) {
                         ForEach(AudioFormat.allCases) {
                             Text($0.rawValue)
@@ -123,11 +128,11 @@ struct ContentView: View {
                     .pickerStyle(.segmented)
                     .disabled(isProcessing || downloadType == .video)
                 }
-                .padding()
-                
+                .padding(.vertical, 5)
+
                 HStack {
                     Text("Apply Noise Reduction:")
-                        .frame(width: 150, alignment: .leading)
+                        .font(.system(size: 14))
                     Toggle(isOn: $applyNoiseReduction) {
                         EmptyView()
                     }
@@ -135,11 +140,23 @@ struct ContentView: View {
                     Text("(audio only)")
                         .foregroundColor(.secondary)
                         .font(.caption)
+                    
+                    Spacer()
+                    
+                    Text("Keep Raw Audio:")
+                        .font(.system(size: 14))
+                    Toggle(isOn: $keepRawAudio) {
+                        EmptyView()
+                    }
+                    .disabled(isProcessing || downloadType == .video || !applyNoiseReduction)
+                    Text("(when denoising)")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
                 }
-                .padding()
+                .padding(.vertical, 5)
             }
             .padding()
-            .background(Color.gray.opacity(0.1))
+            .background(Color.gray.opacity(0.05))
             .cornerRadius(5)
             
             // Action buttons
@@ -154,6 +171,7 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
                 .disabled(isProcessing || urlString.isEmpty || downloadDirectory == nil)
+                .frame(maxWidth: .infinity)
                 
                 Button(action: {
                     cancelDownload()
@@ -165,6 +183,7 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
                 .disabled(!isProcessing)
+                .frame(maxWidth: .infinity)
             }
             .padding()
             
@@ -249,7 +268,8 @@ struct ContentView: View {
         logMessage("Download directory: \(downloadDirectory.path)")
         logMessage("Download type: \(downloadType.rawValue)")
         logMessage("Audio format: \(audioFormat.rawValue)")
-        logMessage("Apply noise reduction: \(applyNoiseReduction)")
+                logMessage("Apply noise reduction: \(applyNoiseReduction)")
+                logMessage("Keep raw audio: \(keepRawAudio)")
         
         // Run in a background task to avoid blocking UI
         Task.detached {
@@ -269,13 +289,14 @@ struct ContentView: View {
                 }
                 
                 // Get values from main actor
-                let (localUrlString, localDownloadDirectory, localDownloadType, localAudioFormat, localApplyNoiseReduction) = await MainActor.run {
+                let (localUrlString, localDownloadDirectory, localDownloadType, localAudioFormat, localApplyNoiseReduction, localKeepRawAudio) = await MainActor.run {
                     return (
                         urlString,
                         downloadDirectory.path,
                         downloadType == .audio ? "audio" : "video",
                         audioFormat.rawValue.lowercased(),
-                        applyNoiseReduction
+                        applyNoiseReduction,
+                        keepRawAudio
                     )
                 }
                 
@@ -285,7 +306,8 @@ struct ContentView: View {
                     directory: localDownloadDirectory,
                     downloadType: localDownloadType,
                     audioFormat: localAudioFormat,
-                    applyNoiseReduction: localApplyNoiseReduction
+                    applyNoiseReduction: localApplyNoiseReduction,
+                    keepRawAudio: localKeepRawAudio
                 )
                 
                 // Process and log the output
@@ -362,7 +384,8 @@ struct ContentView: View {
         directory: String,
         downloadType: String,
         audioFormat: String,
-        applyNoiseReduction: Bool
+        applyNoiseReduction: Bool,
+        keepRawAudio: Bool
     ) async throws -> (stdout: String, stderr: String) {
         // This function will be executed in a separate task
         return try await withTaskCancellationHandler {
@@ -385,6 +408,7 @@ struct ContentView: View {
             let downloadTypeObj = PythonObject(downloadType)
             let formatObj = PythonObject(audioFormat)
             let denoiseObj = PythonObject(applyNoiseReduction)
+            let keepRawAudioObj = PythonObject(keepRawAudio)
             
             // Set stdout and stderr to capture output
             let io = Python.import("io")
@@ -402,7 +426,8 @@ struct ContentView: View {
                     output_path: directoryObj,
                     download_type: downloadTypeObj,
                     audio_format: formatObj,
-                    denoise: denoiseObj
+                    denoise: denoiseObj,
+                    keep_raw_audio: keepRawAudioObj
                 )
                 
                 // Get the captured output
