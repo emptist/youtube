@@ -109,7 +109,10 @@ struct ContentView: View {
                     .padding(.bottom, 5)
 
                 HStack {
-                    Picker("Download Type", selection: $downloadType) {
+                    Text("Download Type:")
+                        .frame(width: 120, alignment: .leading)
+                        .font(.system(size: 14))
+                    Picker("", selection: $downloadType) {
                         ForEach(DownloadType.allCases) {
                             Text($0.rawValue)
                         }
@@ -120,7 +123,10 @@ struct ContentView: View {
                 .padding(.vertical, 5)
 
                 HStack {
-                    Picker("Audio Format", selection: $audioFormat) {
+                    Text("Audio Format:")
+                        .frame(width: 120, alignment: .leading)
+                        .font(.system(size: 14))
+                    Picker("", selection: $audioFormat) {
                         ForEach(AudioFormat.allCases) {
                             Text($0.rawValue)
                         }
@@ -159,33 +165,37 @@ struct ContentView: View {
             .background(Color.gray.opacity(0.05))
             .cornerRadius(5)
             
-            // Action buttons
-            HStack {
+            // Action buttons - using SwiftUI's natural layout system for appropriate sizing
+            HStack(spacing: 20) {
                 Button(action: {
                     downloadMedia()
                 }) {
                     Text("Start Download")
+                        .multilineTextAlignment(.center)
                         .padding()
                         .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
                 .disabled(isProcessing || urlString.isEmpty || downloadDirectory == nil)
-                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
                 
                 Button(action: {
                     cancelDownload()
                 }) {
                     Text("Cancel")
+                        .multilineTextAlignment(.center)
                         .padding()
                         .background(Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
                 .disabled(!isProcessing)
-                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
             }
             .padding()
+            .frame(maxWidth: .infinity)
+            .frame(minWidth: 300) // Minimum width to prevent buttons from being too small
             
             // Progress bar
             ProgressView(value: progress)
