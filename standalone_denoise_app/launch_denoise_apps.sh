@@ -20,18 +20,44 @@ show_menu() {
     echo -n "Enter your choice [1-4]: "
 }
 
-# Function to check if ffmpeg is installed
+# Function to check if ffmpeg is installed with improved detection
 check_ffmpeg() {
-    if ! command -v ffmpeg &> /dev/null; then
-        echo -e "\nWarning: ffmpeg is not detected!"
-        echo "Some audio formats may not be supported."
-        echo "Installation instructions:"
-        echo "- macOS: brew install ffmpeg"
-        echo "- Windows: Download from https://ffmpeg.org/download.html"
-        echo "- Linux: Use your package manager (e.g., sudo apt install ffmpeg)"
-        echo -e "\nPress Enter to continue..."
-        read -r
+    # Method 1: command -v (standard way)
+    if command -v ffmpeg &> /dev/null; then
+        echo "✓ ffmpeg found in PATH"
+        return 0
     fi
+    
+    # Method 2: Check common installation paths
+    local common_paths=("/usr/local/bin/ffmpeg" "/opt/homebrew/bin/ffmpeg" "/usr/bin/ffmpeg")
+    
+    for path in "${common_paths[@]}"; do
+        if [[ -x "$path" ]]; then
+            echo "✓ ffmpeg found at $path"
+            # Add to PATH for this session if not already there
+            if [[ ! "$PATH" == *"$(dirname "$path")"* ]]; then
+                echo "Adding $path to PATH for this session"
+                export PATH="$(dirname "$path"):$PATH"
+            fi
+            return 0
+        fi
+    done
+    
+    # If we get here, ffmpeg is not found
+    echo "Error: ffmpeg is required but not installed or not in PATH." >&2
+    echo "Please install ffmpeg before running this application." >&2
+    echo "Installation instructions for different platforms:" >&2
+    echo "- macOS: brew install ffmpeg" >&2
+    echo "- Ubuntu/Debian: sudo apt install ffmpeg" >&2
+    echo "- Windows: Download from https://ffmpeg.org/download.html" >&2
+    
+    # Offer to help test ffmpeg detection
+    echo "\nYou can run the test script to diagnose ffmpeg detection issues:" >&2
+    echo "python test_ffmpeg_detection.py" >&2
+    
+    echo -e "\nPress Enter to continue..."
+    read -r
+    return 1
 }
 
 # Function to install dependencies
